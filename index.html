@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sabian 360 Deciphering</title>
+
+  <style>
+    :root {
+      --ivory: #f8f3e8;
+      --paper: #fffdf7;
+      --gold: #b19155;
+      --dark-gold: #7b6338;
+      --text: #302c25;
+      --shadow: rgba(40, 32, 20, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, #fffef9 0%, var(--ivory) 70%);
+      font-family:
+        "Yu Mincho",
+        "Hiragino Mincho ProN",
+        "Noto Serif JP",
+        "Times New Roman",
+        serif;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .site-header {
+      padding: 42px 20px 28px;
+      text-align: center;
+    }
+
+    .site-title {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 500;
+      letter-spacing: 0.06em;
+    }
+
+    .tagline {
+      margin: 14px 0 0;
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      letter-spacing: 0.08em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: #766c5d;
+      font-family: Arial, sans-serif;
+      font-size: 0.9rem;
+    }
+
+    .language-selector {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .language-button,
+    .zodiac-button,
+    .group-button,
+    .nav-button {
+      border: 1px solid var(--gold);
+      color: var(--dark-gold);
+      background: rgba(255, 255, 255, 0.72);
+      cursor: pointer;
+      transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    .language-button {
+      min-width: 110px;
+      padding: 9px 14px;
+      border-radius: 999px;
+    }
+
+    .language-button:hover,
+    .language-button.active,
+    .zodiac-button:hover,
+    .zodiac-button.active,
+    .group-button:hover,
+    .group-button.active,
+    .nav-button:hover {
+      color: white;
+      background: var(--gold);
+    }
+
+    .language-button:hover,
+    .zodiac-button:hover,
+    .group-button:hover,
+    .nav-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .main-container {
+       width: min(1400px, calc(100% - 40px));
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    .zodiac-navigation {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(90px, 1fr));
+      gap: 10px;
+      margin: 10px 0 28px;
+    }
+
+    .zodiac-button {
+      min-height: 58px;
+      padding: 9px 6px;
+      border-radius: 8px;
+    }
+
+    .zodiac-symbol {
+      display: block;
+      font-size: 1.45rem;
+    }
+
+    .zodiac-name {
+      display: block;
+      margin-top: 3px;
+      font-family: Arial, sans-serif;
+      font-size: 0.72rem;
+    }
+
+    .section-title {
+      margin: 28px 0 18px;
+      text-align: center;
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+
+    .degree-groups {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 30px;
+    }
+
+    .group-button {
+      min-width: 82px;
+      padding: 9px 13px;
+      border-radius: 7px;
+    }
+
+    .status-message {
+      min-height: 26px;
+      margin: 20px 0;
+      text-align: center;
+      color: #756b5d;
+      font-family: Arial, sans-serif;
+    }
+
+    .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 28px;  
+    }
+
+    .card-area {
+      perspective: 1500px;
+    }
+
+    .sabian-card {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    .sabian-card.open {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border: 3px double var(--gold);
+      border-radius: 13px;
+      box-shadow: 0 14px 32px var(--shadow);
+      backface-visibility: hidden;
+    }
+
+    .card-back {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(177, 145, 85, 0.18),
+          rgba(255, 255, 255, 0.86)
+        ),
+        repeating-linear-gradient(
+          45deg,
+          transparent 0,
+          transparent 10px,
+          rgba(177, 145, 85, 0.12) 10px,
+          rgba(177, 145, 85, 0.12) 11px
+        ),
+        var(--paper);
+    }
+
+    .card-back::before,
+    .card-back::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(177, 145, 85, 0.8);
+      border-radius: 8px;
+    }
+
+    .card-back::after {
+      inset: 24px;
+      border-style: dashed;
+      opacity: 0.65;
+    }
+
+    .card-back-center {
+      position: relative;
+      z-index: 1;
+      color: var(--dark-gold);
+      font-size: 3.2rem;
+    }
+
+    .card-front {
+      display: flex;
+      flex-direction: column;
+      transform: rotateY(180deg);
+      background: var(--paper);
+    }
+
+    .card-heading {
+      flex: 0 0 auto;
+      padding: 11px 8px 8px;
+      text-align: center;
+      color: var(--dark-gold);
+      background: rgba(248, 243, 232, 0.95);
+      border-bottom: 1px solid rgba(177, 145, 85, 0.55);
+    }
+
+    .card-degree {
+      display: block;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+
+    .card-image-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      background: #ece4d4;
+    }
+
+    .card-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .card-image-missing {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+      text-align: center;
+      color: #88795f;
+      font-family: Arial, sans-serif;
+      font-size: 0.8rem;
+    }
+
+    .story-panel {
+      display: none;
+      width: min(820px, 100%);
+      margin: 34px auto 0;
+      padding: clamp(22px, 5vw, 48px);
+      border: 1px solid rgba(177, 145, 85, 0.6);
+      border-radius: 14px;
+      background: rgba(255, 253, 247, 0.94);
+      box-shadow: 0 16px 40px var(--shadow);
+    }
+
+    .story-panel.visible {
+      display: block;
+    }
+
+    .story-degree {
+      margin: 0;
+      text-align: center;
+      color: var(--dark-gold);
+      font-size: clamp(1.45rem, 4vw, 2.1rem);
+      font-weight: 500;
+    }
+
+    .original-label,
+    .story-label {
+      margin: 34px 0 10px;
+      color: var(--dark-gold);
+      font-family: Arial, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .original-text {
+      margin: 0;
+      padding: 18px 20px;
+      border-left: 3px solid var(--gold);
+      background: rgba(248, 243, 232, 0.78);
+      font-size: 1.05rem;
+      line-height: 1.9;
+      white-space: pre-line;
+    }
+
+    .story-text {
+      margin: 0;
+      font-size: clamp(1rem, 2.2vw, 1.12rem);
+      line-height: 2.05;
+      white-space: pre-line;
+    }
+
+    .story-navigation {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 38px;
+    }
+
+    .nav-button {
+      min-width: 128px;
+      padding: 10px 18px;
+      border-radius: 999px;
+    }
+
+    .nav-button:disabled {
+      cursor: default;
+      opacity: 0.35;
+      transform: none;
+      color: #857b6a;
+      background: transparent;
+    }
+
+    .site-footer {
+      padding: 20px;
+      text-align: center;
+      color: #837868;
+      font-family: Arial, sans-serif;
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 950px) {
+      .zodiac-navigation {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 650px) {
+      .site-header {
+        padding-top: 30px;
+      }
+
+      .zodiac-navigation {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+
+      .story-navigation {
+        flex-direction: column;
+      }
+
+      .nav-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <h1 class="site-title">Sabian 360 Deciphering</h1>
+
+    <p class="tagline">
+      One Card. One Symbol. One Deciphering.
+    </p>
+
+    <p class="subtitle">
+      Explore the deciphering of all 360 Sabian Symbols.
+    </p>
+
+    <div class="language-selector" aria-label="Language selection">
+      <button class="language-button" data-language="en">
+        English
+      </button>
+
+      <button class="language-button active" data-language="ja">
+        日本語
+      </button>
+
+      <button class="language-button" data-language="zhTw">
+        繁體中文
+      </button>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <nav
+      id="zodiacNavigation"
+      class="zodiac-navigation"
+      aria-label="Zodiac signs"
+    ></nav>
+
+    <h2 id="sectionTitle" class="section-title">Aries</h2>
+
+    <div
+      id="degreeGroups"
+      class="degree-groups"
+      aria-label="Degree groups"
+    ></div>
+
+    <div id="statusMessage" class="status-message">
+      Loading stories...
+    </div>
+
+    <section
+      id="cardsGrid"
+      class="cards-grid"
+      aria-label="Sabian cards"
+    ></section>
+
+    <article id="storyPanel" class="story-panel">
+      <h2 id="storyDegree" class="story-degree"></h2>
+
+      <p id="originalLabel" class="original-label">
+        Original Text
+      </p>
+
+      <p id="originalText" class="original-text"></p>
+
+      <p id="storyLabel" class="story-label">
+        Story
+      </p>
+
+      <div id="storyText" class="story-text"></div>
+
+      <div class="story-navigation">
+        <button id="previousButton" class="nav-button">
+          ◀ Previous
+        </button>
+
+        <button id="nextButton" class="nav-button">
+          Next ▶
+        </button>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    © Sabian 360 Stories
+  </footer>
+
+  <script>
+    const API_URL =
+      "https://script.google.com/macros/s/AKfycbx4Ws1e1JVicBQR7Lfr8v7G0o7yvRBiX1uPZZdXHFr7BhEDcHmXCFYBNt2kkgX62lrVUA/exec";
+
+    const zodiacSigns = [
+      { key: "aries", symbol: "♈", en: "Aries", ja: "牡羊座", zhTw: "牡羊座" },
+      { key: "taurus", symbol: "♉", en: "Taurus", ja: "牡牛座", zhTw: "金牛座" },
+      { key: "gemini", symbol: "♊", en: "Gemini", ja: "双子座", zhTw: "雙子座" },
+      { key: "cancer", symbol: "♋", en: "Cancer", ja: "蟹座", zhTw: "巨蟹座" },
+      { key: "leo", symbol: "♌", en: "Leo", ja: "獅子座", zhTw: "獅子座" },
+      { key: "virgo", symbol: "♍", en: "Virgo", ja: "乙女座", zhTw: "處女座" },
+      { key: "libra", symbol: "♎", en: "Libra", ja: "天秤座", zhTw: "天秤座" },
+      { key: "scorpio", symbol: "♏", en: "Scorpio", ja: "蠍座", zhTw: "天蠍座" },
+      { key: "sagittarius", symbol: "♐", en: "Sagittarius", ja: "射手座", zhTw: "射手座" },
+      { key: "capricorn", symbol: "♑", en: "Capricorn", ja: "山羊座", zhTw: "摩羯座" },
+      { key: "aquarius", symbol: "♒", en: "Aquarius", ja: "水瓶座", zhTw: "水瓶座" },
+      { key: "pisces", symbol: "♓", en: "Pisces", ja: "魚座", zhTw: "雙魚座" }
+    ];
+
+    const degreeGroups = [
+      { label: "01–05", start: 1, end: 5 },
+      { label: "06–10", start: 6, end: 10 },
+      { label: "11–15", start: 11, end: 15 },
+      { label: "16–20", start: 16, end: 20 },
+      { label: "21–25", start: 21, end: 25 },
+      { label: "26–30", start: 26, end: 30 }
+    ];
+
+    const translations = {
+      en: {
+        original: "Original Text",
+        story: "Deciphering",
+        previous: "◀ Previous",
+        next: "Next ▶",
+        loading: "Loading stories...",
+        noStories: "Stories for this section have not been added yet.",
+        loadError: "The stories could not be loaded.",
+        imageMissing: "Illustration coming soon"
+      },
+
+      ja: {
+        original: "原文",
+        story: "解読",
+        previous: "◀ 前へ",
+        next: "次へ ▶",
+        loading: "物語を読み込んでいます……",
+        noStories: "この範囲の物語は、まだ登録されていません。",
+        loadError: "物語を読み込めませんでした。",
+        imageMissing: "イラスト準備中"
+      },
+
+      zhTw: {
+        original: "原文",
+        story: "解讀",
+        previous: "◀ 上一張",
+        next: "下一張 ▶",
+        loading: "正在載入故事……",
+        noStories: "這個範圍的故事尚未收錄。",
+        loadError: "無法載入故事。",
+        imageMissing: "插圖準備中"
+      }
+    };
+
+    let allStories = [];
+    let displayedStories = [];
+
+    let currentLanguage = "ja";
+    let currentZodiac = "aries";
+    let currentGroupIndex = 0;
+    let currentStoryIndex = -1;
+
+    const zodiacNavigation =
+      document.getElementById("zodiacNavigation");
+
+    const degreeGroupsElement =
+      document.getElementById("degreeGroups");
+
+    const sectionTitle =
+      document.getElementById("sectionTitle");
+
+    const statusMessage =
+      document.getElementById("statusMessage");
+
+    const cardsGrid =
+      document.getElementById("cardsGrid");
+
+    const storyPanel =
+      document.getElementById("storyPanel");
+
+    const storyDegree =
+      document.getElementById("storyDegree");
+
+    const originalLabel =
+      document.getElementById("originalLabel");
+
+    const originalText =
+      document.getElementById("originalText");
+
+    const storyLabel =
+      document.getElementById("storyLabel");
+
+    const storyText =
+      document.getElementById("storyText");
+
+    const previousButton =
+      document.getElementById("previousButton");
+
+    const nextButton =
+      document.getElementById("nextButton");
+
+
+    function getStoryDegreeNumber(story) {
+      const source =
+        story.degreeEn ||
+        story.degreeJa ||
+        story.id ||
+        "";
+
+      const match = String(source).match(/(\d{1,2})/);
+
+      return match ? Number(match[1]) : 0;
+    }
+
+
+    function getStoryZodiacKey(story) {
+      if (story.id && story.id.includes("-")) {
+        return story.id.split("-")[0].toLowerCase();
+      }
+
+      const degreeEn =
+        String(story.degreeEn || "").toLowerCase();
+
+      const sign = zodiacSigns.find(item =>
+        degreeEn.includes(item.en.toLowerCase())
+      );
+
+      return sign ? sign.key : "";
+    }
+
+
+    function getCurrentSign() {
+      return zodiacSigns.find(
+        sign => sign.key === currentZodiac
+      );
+    }
+
+
+    function getDegreeText(story) {
+      if (currentLanguage === "en") {
+        return story.degreeEn || story.degreeJa || "";
+      }
+
+      if (currentLanguage === "zhTw") {
+        const number = getStoryDegreeNumber(story);
+        const sign = getCurrentSign();
+
+        return `${sign.zhTw}${number}度`;
+      }
+
+      return story.degreeJa || story.degreeEn || "";
+    }
+
+
+    function getOriginalText(story) {
+      if (currentLanguage === "ja") {
+        return story.originalJa ||
+          story.originalEn ||
+          "";
+      }
+
+      return story.originalEn ||
+        story.originalJa ||
+        "";
+    }
+
+
+    function getStoryText(story) {
+      if (currentLanguage === "en") {
+        return story.storyEn || "";
+      }
+
+      if (currentLanguage === "zhTw") {
+        return story.storyZhTw || "";
+      }
+
+      return story.storyJa || "";
+    }
+
+
+    function createZodiacNavigation() {
+      zodiacNavigation.innerHTML = "";
+
+      zodiacSigns.forEach(sign => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "zodiac-button";
+        button.dataset.zodiac = sign.key;
+
+        button.innerHTML = `
+          <span class="zodiac-symbol">${sign.symbol}</span>
+          <span class="zodiac-name">${sign.en}</span>
+        `;
+
+        button.addEventListener("click", () => {
+          currentZodiac = sign.key;
+          currentGroupIndex = 0;
+          closeStory();
+          renderAll();
+        });
+
+        zodiacNavigation.appendChild(button);
+      });
+    }
+
+
+    function createDegreeGroups() {
+      degreeGroupsElement.innerHTML = "";
+
+      degreeGroups.forEach((group, index) => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "group-button";
+        button.textContent = group.label;
+
+        button.addEventListener("click", () => {
+          currentGroupIndex = index;
+          closeStory();
+          renderAll();
+        });
+
+        degreeGroupsElement.appendChild(button);
+      });
+    }
+
+
+    function updateNavigationState() {
+      document
+        .querySelectorAll(".zodiac-button")
+        .forEach(button => {
+          button.classList.toggle(
+            "active",
+            button.dataset.zodiac === currentZodiac
+          );
+        });
+
+      document
+        .querySelectorAll(".group-button")
+        .forEach((button, index) => {
+          button.classList.toggle(
+            "active",
+            index === currentGroupIndex
+          );
+        });
+
+      document
+        .querySelectorAll(".language-button")
+        .forEach(button => {
+          button.classList.toggle(
+            "active",
+            button.dataset.language === currentLanguage
+          );
+        });
+    }
+
+
+    function filterStories() {
+      const group = degreeGroups[currentGroupIndex];
+
+      displayedStories = allStories
+        .filter(story => {
+          const zodiacKey = getStoryZodiacKey(story);
+          const degree = getStoryDegreeNumber(story);
+
+          return (
+            zodiacKey === currentZodiac &&
+            degree >= group.start &&
+            degree <= group.end
+          );
+        })
+        .sort(
+          (a, b) =>
+            getStoryDegreeNumber(a) -
+            getStoryDegreeNumber(b)
+        );
+    }
+
+
+    function renderSectionTitle() {
+      const sign = getCurrentSign();
+
+      sectionTitle.textContent =
+        currentLanguage === "en"
+          ? sign.en
+          : currentLanguage === "zhTw"
+            ? sign.zhTw
+            : sign.ja;
+    }
+
+
+    function renderCards() {
+      cardsGrid.innerHTML = "";
+
+      if (displayedStories.length === 0) {
+        statusMessage.textContent =
+          translations[currentLanguage].noStories;
+
+        return;
+      }
+
+      statusMessage.textContent = "";
+
+      displayedStories.forEach((story, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-area";
+
+        const card = document.createElement("button");
+
+        card.type = "button";
+        card.className = "sabian-card";
+        card.dataset.index = index;
+        card.setAttribute(
+          "aria-label",
+          getDegreeText(story)
+        );
+
+        const degreeNumber =
+          String(getStoryDegreeNumber(story)).padStart(2, "0");
+
+        const normalizedImagePath =
+          `images/${getStoryZodiacKey(story)}-${degreeNumber}.png`;
+
+        const originalImagePath =
+          `images/${story.id}.png`;
+
+      card.innerHTML = `
+  <span class="card-face card-back">
+    <span class="card-back-center">✦</span>
+  </span>
+
+  <span class="card-face card-front">
+
+    <span class="card-image-wrap">
+      <img
+        class="card-image"
+        src="${normalizedImagePath}"
+        data-fallback-src="${originalImagePath}"
+        alt="${escapeHtml(getDegreeText(story))}"
+      >
+
+      <span class="card-image-missing">
+        ${translations[currentLanguage].imageMissing}
+      </span>
+    </span>
+
+  </span>
+`; 
+
+        const image = card.querySelector(".card-image");
+        const missing =
+          card.querySelector(".card-image-missing");
+
+        image.addEventListener("error", () => {
+          const fallbackSrc =
+            image.dataset.fallbackSrc;
+
+          if (
+            fallbackSrc &&
+            image.getAttribute("src") !== fallbackSrc
+          ) {
+            image.src = fallbackSrc;
+            return;
+          }
+
+          image.style.display = "none";
+          missing.style.display = "flex";
+        });
+
+        card.addEventListener("click", () => {
+          openStory(index);
+        });
+
+        wrapper.appendChild(card);
+        cardsGrid.appendChild(wrapper);
+      });
+    }
+
+
+    function openStory(index) {
+      currentStoryIndex = index;
+
+      document
+        .querySelectorAll(".sabian-card")
+        .forEach((card, cardIndex) => {
+          card.classList.toggle(
+            "open",
+            cardIndex === index
+          );
+        });
+
+      renderStoryPanel();
+
+      window.setTimeout(() => {
+        storyPanel.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }, 300);
+    }
+
+
+    function closeStory() {
+      currentStoryIndex = -1;
+
+      storyPanel.classList.remove("visible");
+
+      document
+        .querySelectorAll(".sabian-card")
+        .forEach(card => {
+          card.classList.remove("open");
+        });
+    }
+
+
+    function renderStoryPanel() {
+      if (
+        currentStoryIndex < 0 ||
+        !displayedStories[currentStoryIndex]
+      ) {
+        storyPanel.classList.remove("visible");
+        return;
+      }
+
+      const story =
+        displayedStories[currentStoryIndex];
+
+      const ui =
+        translations[currentLanguage];
+
+      storyDegree.textContent =
+        getDegreeText(story);
+
+      originalLabel.textContent =
+        ui.original;
+
+      originalText.textContent =
+        getOriginalText(story);
+
+      storyLabel.textContent =
+        ui.story;
+
+      storyText.textContent =
+        getStoryText(story);
+
+      previousButton.textContent =
+        ui.previous;
+
+      nextButton.textContent =
+        ui.next;
+
+      previousButton.disabled =
+        currentStoryIndex === 0;
+
+      nextButton.disabled =
+        currentStoryIndex ===
+        displayedStories.length - 1;
+
+      storyPanel.classList.add("visible");
+
+      history.replaceState(
+        null,
+        "",
+        `#${story.id}`
+      );
+    }
+
+
+    function renderAll() {
+      filterStories();
+      renderSectionTitle();
+      updateNavigationState();
+      renderCards();
+
+      if (currentStoryIndex >= 0) {
+        renderStoryPanel();
+      }
+    }
+
+
+    function openStoryFromHash() {
+      const id =
+        window.location.hash.replace("#", "").trim();
+
+      if (!id) {
+        return;
+      }
+
+      const story =
+        allStories.find(item => item.id === id);
+
+      if (!story) {
+        return;
+      }
+
+      const zodiacKey =
+        getStoryZodiacKey(story);
+
+      const degree =
+        getStoryDegreeNumber(story);
+
+      const groupIndex =
+        degreeGroups.findIndex(group =>
+          degree >= group.start &&
+          degree <= group.end
+        );
+
+      if (zodiacKey) {
+        currentZodiac = zodiacKey;
+      }
+
+      if (groupIndex >= 0) {
+        currentGroupIndex = groupIndex;
+      }
+
+      filterStories();
+      renderAll();
+
+      const index =
+        displayedStories.findIndex(
+          item => item.id === id
+        );
+
+      if (index >= 0) {
+        openStory(index);
+      }
+    }
+
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+
+    async function loadStories() {
+      statusMessage.textContent =
+        translations[currentLanguage].loading;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "GET"
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `HTTP error: ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error(
+            "The API response is not an array."
+          );
+        }
+
+        allStories = data;
+
+        renderAll();
+        openStoryFromHash();
+
+      } catch (error) {
+        console.error(error);
+
+        statusMessage.textContent =
+          translations[currentLanguage].loadError;
+      }
+    }
+
+
+    document
+      .querySelectorAll(".language-button")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          currentLanguage =
+            button.dataset.language;
+
+          document.documentElement.lang =
+            currentLanguage === "zhTw"
+              ? "zh-Hant"
+              : currentLanguage;
+
+          renderAll();
+
+          if (currentStoryIndex >= 0) {
+            renderStoryPanel();
+          }
+        });
+      });
+
+
+    previousButton.addEventListener("click", () => {
+      if (currentStoryIndex > 0) {
+        openStory(currentStoryIndex - 1);
+      }
+    });
+
+
+    nextButton.addEventListener("click", () => {
+      if (
+        currentStoryIndex <
+        displayedStories.length - 1
+      ) {
+        openStory(currentStoryIndex + 1);
+      }
+    });
+
+
+    createZodiacNavigation();
+    createDegreeGroups();
+    loadStories();
+  </script>
+</body>
+</html>
