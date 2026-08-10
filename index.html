@@ -409,6 +409,32 @@
         width: 100%;
       }
     }
+/* スマホ表示の調整 */
+@media (max-width: 650px) {
+
+  .site-header {
+    padding-top: 15px;
+  }
+
+  .zodiac-navigation {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .story-navigation {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-button {
+    width: 100%;
+  }
+}
   </style>
 </head>
 
