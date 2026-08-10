@@ -411,6 +411,17 @@
     }
 /* スマホ表示の調整 */
 @media (max-width: 650px) {
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.main-container {
+  width: calc(100% - 20px);
+  margin: 0 auto;
+}
 
   .site-header {
     padding-top: 15px;
