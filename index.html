@@ -736,11 +736,13 @@ body {
           <span class="zodiac-name">${sign.en}</span>
         `;
 
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           currentZodiac = sign.key;
           currentGroupIndex = 0;
           closeStory();
-          renderAll();
+
+          // Re-fetch so newly edited spreadsheet content is reflected immediately.
+          await refreshStoriesForCurrentSection();
         });
 
         zodiacNavigation.appendChild(button);
@@ -758,10 +760,12 @@ body {
         button.className = "group-button";
         button.textContent = group.label;
 
-        button.addEventListener("click", () => {
+        button.addEventListener("click", async () => {
           currentGroupIndex = index;
           closeStory();
-          renderAll();
+
+          // Re-fetch current data before judging this range as unregistered.
+          await refreshStoriesForCurrentSection();
         });
 
         degreeGroupsElement.appendChild(button);
@@ -1081,30 +1085,72 @@ body {
     }
 
 
+
+    async function fetchStoriesWithRetry(maxAttempts = 3) {
+      let lastError = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          const url = `${API_URL}?_=${Date.now()}_${attempt}`;
+
+          const response = await fetch(url, {
+            method: "GET",
+            cache: "no-store"
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!Array.isArray(data)) {
+            throw new Error("The API response is not an array.");
+          }
+
+          if (data.length > 0) {
+            return data;
+          }
+
+          lastError = new Error("The API returned an empty array.");
+        } catch (error) {
+          lastError = error;
+          console.warn(`Story fetch attempt ${attempt} failed:`, error);
+        }
+
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 700 * attempt));
+        }
+      }
+
+      throw lastError || new Error("The stories could not be loaded.");
+    }
+
+
+    async function refreshStoriesForCurrentSection() {
+      try {
+        statusMessage.textContent =
+          translations[currentLanguage].loading;
+
+        allStories = await fetchStoriesWithRetry(2);
+
+        renderAll();
+
+      } catch (error) {
+        console.error(error);
+
+        statusMessage.textContent =
+          translations[currentLanguage].loadError;
+      }
+    }
+
+
     async function loadStories() {
       statusMessage.textContent =
         translations[currentLanguage].loading;
 
       try {
-        const response = await fetch(API_URL, {
-          method: "GET"
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP error: ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error(
-            "The API response is not an array."
-          );
-        }
-
-        allStories = data;
+        allStories = await fetchStoriesWithRetry(3);
 
         renderAll();
         openStoryFromHash();
