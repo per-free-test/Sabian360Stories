@@ -91,20 +91,24 @@
       border-radius: 999px;
     }
 
-    .language-button:hover,
     .language-button.active,
-    .zodiac-button:hover,
     .zodiac-button.active,
-    .group-button:hover,
     .group-button.active,
     .nav-button:hover {
       color: white;
       background: var(--gold);
     }
 
-    .language-button:hover,
-    .zodiac-button:hover,
-    .group-button:hover,
+    /* Hoverは選択中と同じ金色にしない。
+       これで「2つ選択されている」ように見えるのを防ぐ。 */
+    .language-button:hover:not(.active),
+    .zodiac-button:hover:not(.active),
+    .group-button:hover:not(.active) {
+      color: var(--dark-gold);
+      background: rgba(177, 145, 85, 0.14);
+      transform: translateY(-1px);
+    }
+
     .nav-button:hover {
       transform: translateY(-1px);
     }
@@ -736,13 +740,14 @@ body {
           <span class="zodiac-name">${sign.en}</span>
         `;
 
-        button.addEventListener("click", async () => {
+        button.addEventListener("click", () => {
           currentZodiac = sign.key;
           currentGroupIndex = 0;
           closeStory();
 
-          // Re-fetch so newly edited spreadsheet content is reflected immediately.
-          await refreshStoriesForCurrentSection();
+          // スプレッドシートはページ読込時に1回だけ取得。
+          // 星座の切替は読み込み済みデータを使うので即時表示。
+          renderAll();
         });
 
         zodiacNavigation.appendChild(button);
@@ -760,12 +765,13 @@ body {
         button.className = "group-button";
         button.textContent = group.label;
 
-        button.addEventListener("click", async () => {
+        button.addEventListener("click", () => {
           currentGroupIndex = index;
           closeStory();
 
-          // Re-fetch current data before judging this range as unregistered.
-          await refreshStoriesForCurrentSection();
+          // 01–05 / 06–10 などの切替では通信しない。
+          // 読み込み済みデータから即時に表示する。
+          renderAll();
         });
 
         degreeGroupsElement.appendChild(button);
@@ -1124,24 +1130,6 @@ body {
       }
 
       throw lastError || new Error("The stories could not be loaded.");
-    }
-
-
-    async function refreshStoriesForCurrentSection() {
-      try {
-        statusMessage.textContent =
-          translations[currentLanguage].loading;
-
-        allStories = await fetchStoriesWithRetry(2);
-
-        renderAll();
-
-      } catch (error) {
-        console.error(error);
-
-        statusMessage.textContent =
-          translations[currentLanguage].loadError;
-      }
     }
 
 
