@@ -200,6 +200,23 @@
       transform: rotateY(180deg);
     }
 
+    .read-story-button {
+      display: none;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--gold);
+      border-radius: 999px;
+      color: var(--dark-gold);
+      background: rgba(255, 255, 255, 0.86);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .read-story-button.visible {
+      display: block;
+    }
+
     .card-face {
       position: absolute;
       inset: 0;
@@ -573,7 +590,8 @@ body {
         loading: "Loading stories...",
         noStories: "Stories for this section have not been added yet.",
         loadError: "The stories could not be loaded.",
-        imageMissing: "Illustration coming soon"
+        imageMissing: "Illustration coming soon",
+        readStory: "Read deciphering"
       },
 
       ja: {
@@ -584,7 +602,8 @@ body {
         loading: "物語を読み込んでいます……",
         noStories: "この範囲の物語は、まだ登録されていません。",
         loadError: "物語を読み込めませんでした。",
-        imageMissing: "イラスト準備中"
+        imageMissing: "イラスト準備中",
+        readStory: "解読を読む"
       },
 
       zhTw: {
@@ -595,7 +614,8 @@ body {
         loading: "正在載入故事……",
         noStories: "這個範圍的故事尚未收錄。",
         loadError: "無法載入故事。",
-        imageMissing: "插圖準備中"
+        imageMissing: "插圖準備中",
+        readStory: "閱讀解讀"
       }
     };
 
@@ -921,11 +941,21 @@ body {
           missing.style.display = "flex";
         });
 
+        const readButton = document.createElement("button");
+        readButton.type = "button";
+        readButton.className = "read-story-button";
+        readButton.textContent = translations[currentLanguage].readStory;
+
         card.addEventListener("click", () => {
           openStory(index);
         });
 
+        readButton.addEventListener("click", () => {
+          showStory(index);
+        });
+
         wrapper.appendChild(card);
+        wrapper.appendChild(readButton);
         cardsGrid.appendChild(wrapper);
       });
     }
@@ -943,6 +973,42 @@ body {
           );
         });
 
+      document
+        .querySelectorAll(".read-story-button")
+        .forEach((button, buttonIndex) => {
+          button.classList.toggle(
+            "visible",
+            buttonIndex === index
+          );
+        });
+
+      // カードをタップした時点では解説へ移動しない。
+      // まずカード全体を見てもらう。
+      storyPanel.classList.remove("visible");
+    }
+
+
+    function showStory(index) {
+      currentStoryIndex = index;
+
+      document
+        .querySelectorAll(".sabian-card")
+        .forEach((card, cardIndex) => {
+          card.classList.toggle(
+            "open",
+            cardIndex === index
+          );
+        });
+
+      document
+        .querySelectorAll(".read-story-button")
+        .forEach((button, buttonIndex) => {
+          button.classList.toggle(
+            "visible",
+            buttonIndex === index
+          );
+        });
+
       renderStoryPanel();
 
       window.setTimeout(() => {
@@ -950,9 +1016,8 @@ body {
           behavior: "smooth",
           block: "start"
         });
-      }, 300);
+      }, 100);
     }
-
 
     function closeStory() {
       currentStoryIndex = -1;
@@ -963,6 +1028,12 @@ body {
         .querySelectorAll(".sabian-card")
         .forEach(card => {
           card.classList.remove("open");
+        });
+
+      document
+        .querySelectorAll(".read-story-button")
+        .forEach(button => {
+          button.classList.remove("visible");
         });
     }
 
@@ -1027,7 +1098,7 @@ body {
       renderCards();
 
       if (currentStoryIndex >= 0) {
-        renderStoryPanel();
+        storyPanel.classList.remove("visible");
       }
     }
 
@@ -1076,7 +1147,7 @@ body {
         );
 
       if (index >= 0) {
-        openStory(index);
+        showStory(index);
       }
     }
 
@@ -1156,6 +1227,9 @@ body {
       .querySelectorAll(".language-button")
       .forEach(button => {
         button.addEventListener("click", () => {
+          const wasStoryVisible =
+            storyPanel.classList.contains("visible");
+
           currentLanguage =
             button.dataset.language;
 
@@ -1167,7 +1241,11 @@ body {
           renderAll();
 
           if (currentStoryIndex >= 0) {
-            renderStoryPanel();
+            if (wasStoryVisible) {
+              showStory(currentStoryIndex);
+            } else {
+              openStory(currentStoryIndex);
+            }
           }
         });
       });
@@ -1175,7 +1253,7 @@ body {
 
     previousButton.addEventListener("click", () => {
       if (currentStoryIndex > 0) {
-        openStory(currentStoryIndex - 1);
+        showStory(currentStoryIndex - 1);
       }
     });
 
@@ -1185,7 +1263,7 @@ body {
         currentStoryIndex <
         displayedStories.length - 1
       ) {
-        openStory(currentStoryIndex + 1);
+        showStory(currentStoryIndex + 1);
       }
     });
 
