@@ -892,8 +892,10 @@ body {
         const degreeNumber =
           String(getStoryDegreeNumber(story)).padStart(2, "0");
 
-        const normalizedImagePath =
-          `images/${getStoryZodiacKey(story)}-${degreeNumber}.png`;
+
+       const normalizedImagePath =
+      `images/${getStoryZodiacKey(story)}-${degreeNumber}.webp`;
+        
 
         const originalImagePath =
           `images/${story.id}.png`;
