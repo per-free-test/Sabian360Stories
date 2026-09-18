@@ -1171,16 +1171,49 @@ body {
 
 
 
-    async function fetchStoriesWithRetry(maxAttempts = 3) {
+    // Story data cache: show the last successful data immediately,
+    // then refresh from Google Apps Script in the background.
+    const STORY_CACHE_KEY = "sabian360StoriesCacheV1";
+
+    function readStoryCache() {
+      try {
+        const raw = localStorage.getItem(STORY_CACHE_KEY);
+        if (!raw) return null;
+
+        const cached = JSON.parse(raw);
+        return Array.isArray(cached?.stories) && cached.stories.length > 0
+          ? cached
+          : null;
+      } catch (error) {
+        console.warn("Story cache could not be read:", error);
+        return null;
+      }
+    }
+
+    function writeStoryCache(stories) {
+      try {
+        localStorage.setItem(
+          STORY_CACHE_KEY,
+          JSON.stringify({
+            savedAt: Date.now(),
+            stories
+          })
+        );
+      } catch (error) {
+        console.warn("Story cache could not be saved:", error);
+      }
+    }
+
+    async function fetchStoriesWithRetry(maxAttempts = 2) {
       let lastError = null;
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
-          const url = `${API_URL}?_=${Date.now()}_${attempt}`;
-
-          const response = await fetch(url, {
+          // Do not add a timestamp query parameter here. It prevented useful
+          // browser/CDN caching and made every visit start from zero.
+          const response = await fetch(API_URL, {
             method: "GET",
-            cache: "no-store"
+            cache: "default"
           });
 
           if (!response.ok) {
@@ -1204,29 +1237,42 @@ body {
         }
 
         if (attempt < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 700 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 350));
         }
       }
 
       throw lastError || new Error("The stories could not be loaded.");
     }
 
-
     async function loadStories() {
-      statusMessage.textContent =
-        translations[currentLanguage].loading;
+      const cached = readStoryCache();
 
-      try {
-        allStories = await fetchStoriesWithRetry(3);
-
+      // Fast path: paint cached stories before waiting for the network.
+      if (cached) {
+        allStories = cached.stories;
         renderAll();
         openStoryFromHash();
+      } else {
+        statusMessage.textContent = translations[currentLanguage].loading;
+      }
 
+      try {
+        const freshStories = await fetchStoriesWithRetry(2);
+        allStories = freshStories;
+        writeStoryCache(freshStories);
+
+        // Refresh silently. On first visit this is the initial render; on
+        // later visits it replaces cached data with the newest sheet data.
+        renderAll();
+        openStoryFromHash();
       } catch (error) {
         console.error(error);
 
-        statusMessage.textContent =
-          translations[currentLanguage].loadError;
+        // If cached data is already on screen, keep it instead of replacing
+        // the page with an error.
+        if (!cached) {
+          statusMessage.textContent = translations[currentLanguage].loadError;
+        }
       }
     }
 
