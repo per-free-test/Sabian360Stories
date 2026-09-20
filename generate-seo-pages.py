@@ -145,7 +145,7 @@ def create_page(story, sign, degree):
     }}
 
     main {{
-      width: min(820px, calc(100% - 32px));
+      width: min(720px, calc(100% - 32px));
       margin: 0 auto;
       padding: 48px 0 80px;
     }}
