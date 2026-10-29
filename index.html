@@ -400,6 +400,18 @@
       background: transparent;
     }
 
+    .view-selector { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin: 0 auto 28px; }
+    .view-button, .person-button { border:1px solid var(--gold); color:var(--dark-gold); background:rgba(255,255,255,.72); cursor:pointer; font:inherit; }
+    .view-button { padding:12px 26px; border-radius:999px; }
+    .view-button.active { background:var(--gold); color:white; }
+    .famous-section[hidden], .sabian-section[hidden], .person-article[hidden] { display:none !important; }
+    .famous-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px, 240px)); justify-content:center; gap:18px; margin:28px 0; }
+    .person-button { padding:24px 16px; border-radius:12px; font-size:1.15rem; box-shadow:0 8px 22px var(--shadow); }
+    .person-button:hover, .person-button.active { background:var(--gold); color:white; }
+    .person-article { width:min(820px,100%); margin:24px auto; padding:clamp(22px,5vw,48px); border:1px solid rgba(177,145,85,.6); border-radius:14px; background:var(--paper); box-shadow:0 16px 40px var(--shadow); }
+    .person-name { text-align:center; color:var(--dark-gold); font-size:clamp(1.5rem,4vw,2rem); font-weight:500; }
+    .person-text { white-space:pre-wrap; overflow-wrap:anywhere; line-height:2.05; font-size:1.06rem; }
+    .famous-status { text-align:center; color:#756b5d; margin:20px 0; }
     .site-footer {
       padding: 20px;
       text-align: center;
@@ -504,7 +516,12 @@ body {
     </div>
   </header>
 
+  <div class="view-selector" aria-label="Content selection">
+    <button type="button" id="sabianViewButton" class="view-button active">360° Sabian</button>
+    <button type="button" id="famousViewButton" class="view-button">有名人</button>
+  </div>
   <main class="main-container">
+    <section id="sabianSection" class="sabian-section">
     <nav
       id="zodiacNavigation"
       class="zodiac-navigation"
@@ -554,6 +571,16 @@ body {
         </button>
       </div>
     </article>
+    </section>
+    <section id="famousSection" class="famous-section" hidden>
+      <h2 id="famousHeading" class="section-title">有名人</h2>
+      <p id="famousStatus" class="famous-status" role="status"></p>
+      <div id="famousList" class="famous-list"></div>
+      <article id="personArticle" class="person-article" hidden>
+        <h3 id="personName" class="person-name"></h3>
+        <div id="personText" class="person-text"></div>
+      </article>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -563,6 +590,76 @@ body {
   <script>
     const API_URL =
       "https://script.google.com/macros/s/AKfycbx4Ws1e1JVicBQR7Lfr8v7G0o7yvRBiX1uPZZdXHFr7BhEDcHmXCFYBNt2kkgX62lrVUA/exec";
+
+    // FamousPeople シート: A列=name, B列=article
+    const FAMOUS_API_URL = API_URL + "?type=famous";
+    let famousPeople = [];
+    let famousLoaded = false;
+    let selectedPerson = -1;
+    let currentView = "sabian";
+    const sabianSection = document.getElementById("sabianSection");
+    const famousSection = document.getElementById("famousSection");
+    const famousList = document.getElementById("famousList");
+    const famousStatus = document.getElementById("famousStatus");
+    const personArticle = document.getElementById("personArticle");
+    const personName = document.getElementById("personName");
+    const personText = document.getElementById("personText");
+    const sabianViewButton = document.getElementById("sabianViewButton");
+    const famousViewButton = document.getElementById("famousViewButton");
+
+    function setView(view) {
+      currentView = view;
+      sabianSection.hidden = view !== "sabian";
+      famousSection.hidden = view !== "famous";
+      sabianViewButton.classList.toggle("active", view === "sabian");
+      famousViewButton.classList.toggle("active", view === "famous");
+      if (view === "famous" && !famousLoaded) loadFamousPeople();
+    }
+
+    function renderFamousPeople() {
+      document.getElementById("famousHeading").textContent =
+        currentLanguage === "en" ? "Famous People" :
+        currentLanguage === "zhTw" ? "知名人物" : "有名人";
+      famousList.replaceChildren();
+      famousPeople.forEach((person, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "person-button";
+        button.textContent = person.name;
+        button.classList.toggle("active", index === selectedPerson);
+        button.addEventListener("click", () => {
+          selectedPerson = index;
+          renderFamousPeople();
+          personArticle.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        famousList.appendChild(button);
+      });
+      const selected = famousPeople[selectedPerson];
+      personArticle.hidden = !selected;
+      if (selected) {
+        personName.textContent = selected.name;
+        personText.textContent = selected.article || "";
+      }
+    }
+
+    async function loadFamousPeople() {
+      famousStatus.textContent = "読み込み中……";
+      try {
+        const response = await fetch(FAMOUS_API_URL);
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error("Unexpected response");
+        famousPeople = data.filter(item => item && typeof item.name === "string" && item.name.trim());
+        famousLoaded = true;
+        famousStatus.textContent = famousPeople.length ? "" : "まだ記事がありません。";
+        renderFamousPeople();
+      } catch (error) {
+        console.error("FamousPeople load failed:", error);
+        famousStatus.textContent = "有名人の記事を読み込めませんでした。Apps Scriptのデプロイを確認してください。";
+      }
+    }
+    sabianViewButton.addEventListener("click", () => setView("sabian"));
+    famousViewButton.addEventListener("click", () => setView("famous"));
 
     const zodiacSigns = [
       { key: "aries", symbol: "♈", en: "Aries", ja: "牡羊座", zhTw: "牡羊座" },
@@ -1293,6 +1390,7 @@ body {
               : currentLanguage;
 
           renderAll();
+          renderFamousPeople();
 
           if (currentStoryIndex >= 0) {
             if (wasStoryVisible) {
